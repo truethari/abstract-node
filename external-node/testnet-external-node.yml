@@ -1,4 +1,4 @@
-name: "testnet-node"
+version: "3.8"
 services:
   prometheus:
     image: prom/prometheus:v2.35.0
@@ -17,7 +17,7 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_DISABLE_LOGIN_FORM: "true"
     ports:
-      - "127.0.0.1:3000:3000"
+      - "0.0.0.0:3000:3000"
   postgres:
     image: "postgres:14"
     command: >
@@ -55,17 +55,14 @@ services:
     image: "matterlabs/external-node:2.0-v24.26.0"
     entrypoint:
       [
-      "/configs/generate_secrets.sh",
-      "/configs/testnet_consensus_secrets.yaml",
+        "/configs/generate_secrets.sh",
+        "/configs/testnet_consensus_secrets.yaml",
       ]
     volumes:
       - ./configs:/configs
   external-node:
     image: "matterlabs/external-node:2.0-v24.26.0"
-    entrypoint:
-      [
-      "/usr/bin/entrypoint.sh",
-      ]
+    entrypoint: ["/usr/bin/entrypoint.sh"]
     restart: always
     depends_on:
       postgres:
@@ -74,10 +71,10 @@ services:
         condition: service_completed_successfully
     ports:
       - "0.0.0.0:3054:3054" # consensus public port
-      - "127.0.0.1:3060:3060"
-      - "127.0.0.1:3061:3061"
-      - "127.0.0.1:3081:3081"
-      - "127.0.0.1:5000:5000"
+      - "0.0.0.0:3060:3060"
+      - "0.0.0.0:3061:3061"
+      - "0.0.0.0:3081:3081"
+      - "0.0.0.0:5000:5000"
     volumes:
       - rocksdb:/db
       - ./configs:/configs
@@ -95,7 +92,7 @@ services:
       EN_MAIN_NODE_URL: https://api.testnet.abs.xyz
       EN_L1_CHAIN_ID: 11155111
       EN_L2_CHAIN_ID: 11124
-      EN_PRUNING_ENABLED: true
+      EN_PRUNING_ENABLED: "true"
 
       EN_STATE_CACHE_PATH: "./db/ext-node/state_keeper"
       EN_MERKLE_TREE_PATH: "./db/ext-node/lightweight"
@@ -108,7 +105,17 @@ services:
       EN_CONSENSUS_SECRETS_PATH: "/configs/testnet_consensus_secrets.yaml"
 
 volumes:
-  postgres: {}
-  rocksdb: {}
+  postgres:
+    driver: local
+    driver_opts:
+      type: none
+      device: /blockchain_data/postgres
+      o: bind
+  rocksdb:
+    driver: local
+    driver_opts:
+      type: none
+      device: /blockchain_data/rocksdb
+      o: bind
   prometheus-data: {}
   grafana-data: {}
